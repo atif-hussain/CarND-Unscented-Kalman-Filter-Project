@@ -43,10 +43,10 @@ UKF::UKF() {
   Xsig_pred_ = MatrixXd(n_x_, n_sig_);			  ///* Predicted sigma points as columns
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 0.2;
+  std_a_ = 3.0;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.2;
+  std_yawdd_ = 2.0;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -306,25 +306,18 @@ MatrixXd UKF::PredictSigmaPoints(MatrixXd& Xsig_aug_, double delta_t) {
 void UKF::PredictMeanAndCovariance(MatrixXd& Xsig_pred_) {
 
   //create vector for predicted state
-  VectorXd x = VectorXd(n_x_);
-
-  //create covariance matrix for prediction
-  MatrixXd P = MatrixXd(n_x_, n_x_);
-
   //predicted state mean
-  x.fill(0.0);
-  // x = Xsig_pred_ * weights_;
-  /* Line above does this:
-   */
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-    x = x + weights_(i) * Xsig_pred_.col(i);
-  }
+  x_ = Xsig_pred_ * weights_;
+
   // included because array programming is not native to C++
   // but Eigen provides these operations for matrix and vector calcs
   
 
+  //create covariance matrix for prediction
+  P_ = MatrixXd(n_x_, n_x_);
+
   //predicted state covariance matrix
-  P.fill(0.0);
+  P_.fill(0.0);
   for (int i = 0; i < n_sig_; i++) {  //iterate over sigma points
 
     // state difference
@@ -334,11 +327,9 @@ void UKF::PredictMeanAndCovariance(MatrixXd& Xsig_pred_) {
     //angle normalization
     x_diff(3) = Mod2PI(x_diff(3));
 
-    P = P + weights_(i) * x_diff * x_diff.transpose() ;
+    P_ = P_ + weights_(i) * x_diff * x_diff.transpose() ;
   }
 
-  x_ = x;
-  P_ = P;
 
   //print result
   std::cout << "Predicted state" << std::endl;
